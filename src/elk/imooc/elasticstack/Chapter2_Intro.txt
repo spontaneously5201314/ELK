@@ -1,0 +1,55 @@
+# create index
+PUT /test_index
+
+GET _cat/indices
+
+DELETE test_index
+
+# create document
+PUT /test_index/doc/1
+{
+  "username":"alfred",
+  "age":1
+}
+
+# create document without id
+POST /test_index/doc
+{
+  "username":"tom",
+  "age":20
+}
+
+# query document
+GET /test_index/doc/1
+
+# query
+GET /test_index/doc/_search
+
+
+GET /test_index/doc/_search
+{
+  "query":{
+    "term": {
+      "_id": "1"
+    }
+  }
+}
+
+GET test_index/_search
+
+# bulk api
+POST _bulk
+{"index":{"_index":"test_index","_type":"doc","_id":"3"}}
+{"username":"alfred","age":20}
+{"delete":{"_index":"test_index","_type":"doc","_id":"1"}}
+{"update":{"_id":"2","_index":"test_index","_type":"doc"}}
+{"doc":{"age":"20"}}
+
+# multi_get
+GET /_mget
+{
+  "docs": [
+    {"_index": "test_index","_type": "doc","_id": "3"},
+    {"_index": "test_index","_type": "doc","_id": "2"}
+  ]
+}

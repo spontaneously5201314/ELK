@@ -1,0 +1,723 @@
+#index
+DELETE my_index
+
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "cookie": {
+          "type": "text",
+          "index": false
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/doc/1
+{
+  "cookie":"name=alfred"
+}
+
+GET my_index/_search
+{
+  "query":{
+    "match": {
+      "cookie": "name"
+    }
+  }
+}
+
+PUT test
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "analysis": {
+        "analyzer": {
+          "trigram": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "standard",
+              "shingle"
+            ]
+          },
+          "reverse": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "standard",
+              "reverse"
+            ]
+          }
+        },
+        "filter": {
+          "shingle": {
+            "type": "shingle",
+            "min_shingle_size": 2,
+            "max_shingle_size": 3
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "title": {
+          "type": "text",
+          "fields": {
+            "trigram": {
+              "type": "text",
+              "analyzer": "trigram"
+            },
+            "reverse": {
+              "type": "text",
+              "analyzer": "reverse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+POST test/doc?refresh=true
+{"title": "noble warriors"}
+POST test/doc?refresh=true
+{"title": "nobel prize"}
+POST test/doc?refresh=true
+{"title": "noble hello prize"}
+
+POST test/doc?refresh=true
+{"title": "nobel prize hello"}
+
+POST test/doc?refresh=true
+{"title": "noebl prize"}
+
+POST test/_analyze
+{
+  "field":"title.trigram",
+  "text":"nobel prize"
+
+}
+
+DELETE test/doc/Fm3mumABM2QEOw6cbOFR
+
+
+GET test/_search
+
+
+POST test/_search
+{
+  "explain": true,
+  "suggest": {
+    "text": "noble prize",
+    "simple_phrase": {
+      "phrase": {
+        "field": "title.trigram",
+        "size": 2,
+        "gram_size": 2,
+        "direct_generator": [
+          {
+            "field": "title.trigram",
+            "suggest_mode": "always"
+          }
+        ],
+        "highlight": {
+          "pre_tag": "<em>",
+          "post_tag": "</em>"
+        }
+      }
+    }
+  }
+}
+
+POST test/_search
+{
+  "suggest": {
+    "sg": {
+      "text": "warriors",
+      "term": {
+        "field": "title.trigram"
+      }
+    }
+  }
+}
+
+
+GET test_title/doc/3/_termvectors
+{
+  "fields" : ["title"],
+  "offsets" : true,
+  "positions" : true,
+  "term_statistics" : true,
+  "field_statistics" : true
+}
+
+
+PUT test_title/doc/3
+{
+  "title":"twitt"
+}
+
+GET test_title/_search
+
+GET test/doc/_termvectors
+{
+  "doc": {
+    "title": "twitter test test test"
+  },
+  "fields": [
+    "title"
+  ]
+}
+
+
+GET test/_search
+
+GET test/_field_caps?fields=aa
+
+PUT ttt/doc/1
+{
+  "a":"a"
+}
+
+PUT test_suggest/doc/2
+{
+  "name":"hello !world",
+  "desc":"a beauty helloswk"
+
+}
+
+POST test_suggest/_analyze
+{
+  "field": "desc",
+  "text":"hello !world"
+}
+
+GET test_suggest/_search
+{
+  "suggest":{
+    "a":{
+      "text":"hello !world",
+      "term":{
+        "field":"name"
+      }
+    }
+  }
+}
+
+
+
+PUT test
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "comments": {
+          "type": "nested",
+          "properties": {
+            "votes": {
+              "type": "nested"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+PUT test/doc/1?refresh
+{
+  "title": "Test title",
+  "comments": [
+    {
+      "author": "kimchy",
+      "text": "comment text",
+      "votes": []
+    },
+    {
+      "author": "nik9000",
+      "text": "words words words",
+      "votes": [
+        {"value": 1 , "voter": "kimchy"},
+        {"value": -1, "voter": "other"}
+      ]
+    }
+  ]
+}
+
+
+
+POST test/_search
+{
+  "query": {
+    "nested": {
+      "path": "comments.votes",
+        "query": {
+          "match": {
+            "comments.votes.voter": "kimchy"
+          }
+        },
+        "inner_hits" : {}
+    }
+  },
+  "sort":{
+    "_id":"desc"
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# mapping
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "dynamic":"strict",
+      "properties": {
+        "title": {
+          "type": "text"
+        },
+        "name": {
+          "type": "keyword"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+
+GET my_index/
+
+DELETE my_index
+
+PUT my_index/doc/1
+{
+  "title":"hello,world",
+  "desc":"nothing here"
+}
+
+GET my_index/doc/1
+
+GET my_index/doc/_search
+{
+  "query":{
+    "match":{
+      "desc":"here"
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PUT test_index_10
+{
+  "mappings": {
+    "doc": {
+      "dynamic_templates": [
+        {
+          "double_as_float": {
+            "match_mapping_type": "double",
+            "mapping": {
+              "type": "float"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+# store
+PUT test_index_11/
+{
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled":false
+      },
+      "properties": {
+        "name": {
+          "type": "keyword",
+          "store": true
+        },
+        "age":{
+          "store":true
+        }
+      }
+    }
+  }
+}
+
+DELETE test_index_11
+PUT test_index_11
+GET test_index_11
+DELETE _template/*
+PUT test_index_11/doc/_mapping
+{
+  "_source": false,
+  "properties": {
+    "name": {
+      "type": "keyword",
+      "store": true
+    },
+    "age": {
+      "type": "long",
+      "store": true
+    },
+    "desc": {
+      "type": "text",
+      "fielddata": true,
+      "store": true
+    }
+  }
+}
+
+
+PUT test_index_11
+{
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled":false
+      },
+      "properties": {
+        "name": {
+          "type": "keyword",
+          "store": true
+        },
+        "age": {
+          "type": "long",
+          "store": true
+        },
+        "desc": {
+          "type": "text",
+          "fielddata": true,
+          "store": true
+        }
+      }
+    }
+  }
+}
+
+
+PUT test_index_11/doc/2
+{
+  "money":10.3,
+  "name":"asf",
+  "age":12,
+  "desc":"hello,world"
+}
+
+GET test_index_11/_search
+
+GET test_index_11/_search?stored_fields=*
+
+
+GET test_index_11/_search
+{
+  "stored_fields": ["name","age","desc"],
+  "docvalue_fields": ["desc"]
+}
+
+
+
+
+
+
+
+
+
+
+# highlight
+PUT test_highlight/doc/1
+{
+  "name":"alfred",
+  "desc":"alfred way"
+}
+
+GET test_highlight/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "name": "alfred"
+          }
+        },
+        {
+          "match": {
+            "desc": "alfred"
+          }
+        }
+      ]
+    }
+  },
+  "highlight": {
+    "fields": {
+      "name": {},
+      "desc": {}
+    }
+  }
+}
+
+
+
+
+
+GET _field_stats/
+
+# index template
+GET _template
+
+PUT _template/test_template
+{
+  "index_patterns": ["te*", "bar*"],
+  "order":0,
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled": false
+      },
+      "properties": {
+        "name": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
+
+PUT _template/test_template2
+{
+  "index_patterns": ["test*"],
+  "order":1,
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled": true
+      }
+    }
+  }
+}
+
+
+PUT foo_index
+GET foo_index/_mapping
+
+PUT bar_index
+GET bar_index/
+
+DELETE test_index
+PUT test_index
+GET test_index/
+
+
+
+
+#customize
+PUT test_index_1
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_custom_analyzer": {
+          "type":      "custom",
+          "tokenizer": "standard",
+          "char_filter": [
+            "html_strip"
+          ],
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ]
+        }
+      }
+    }
+  }
+}
+
+POST test_index_1/_analyze
+{
+  "analyzer": "my_custom_analyzer",
+  "text": "Is this <b>a box</b>?"
+}
+
+
+
+PUT test_index_2
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_custom_analyzer": {
+          "type": "custom",
+          "char_filter": [
+            "emoticons"
+          ],
+          "tokenizer": "punctuation",
+          "filter": [
+            "lowercase",
+            "english_stop"
+          ]
+        }
+      },
+      "tokenizer": {
+        "punctuation": {
+          "type": "pattern",
+          "pattern": "[ .,!?]"
+        }
+      },
+      "char_filter": {
+        "emoticons": {
+          "type": "mapping",
+          "mappings": [
+            ":) => _happy_",
+            ":( => _sad_"
+          ]
+        }
+      },
+      "filter": {
+        "english_stop": {
+          "type": "stop",
+          "stopwords": "_english_"
+        }
+      }
+    }
+  }
+}
+
+POST test_index_2/_analyze
+{
+  "analyzer": "my_custom_analyzer",
+  "text":     "I'm a :) person, and you?"
+}
+
+
+# analyze
+POST _analyze
+{
+  "analyzer": "standard",
+  "text":"The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}
+
+POST test_index/_analyze
+{
+  "field": "username",
+  "text":"hello world!"
+}
+
+POST _analyze
+{
+  "tokenizer": "standard",
+  "filter":  [ "lowercase" ,"shingle","reverse"],
+ "text":"a beauty Hello World!"
+}
+
+POST _analyze
+{
+  "analyzer": "pattern",
+  "text": "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}
+
+
+POST _analyze
+{
+  "tokenizer": "path_hierarchy",
+  "text": "/one/two/three"
+}
+
+
+
+POST _analyze
+{
+  "text": "a Hello,world!",
+  "tokenizer": "standard",
+  "filter": [
+    "stop",
+    "lowercase",
+    {
+      "type": "ngram",
+      "min_gram": 2,
+      "max_gram": 4
+    }
+  ]
+}
+
+
+
+
+POST _analyze
+{
+  "tokenizer": "keyword",
+  "char_filter": [
+    "html_strip"
+  ],
+  "text": "<p>I&apos;m so <b>happy</b>!</p>"
+}

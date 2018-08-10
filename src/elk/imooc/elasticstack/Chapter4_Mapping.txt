@@ -1,0 +1,645 @@
+# advice for custom mapping
+DELETE test_index
+PUT my_product_index/doc/1
+{
+  "referrer": "-",
+  "response_code": "200",
+  "remote_ip": "171.221.139.157",
+  "method": "POST",
+  "user_name": "-",
+  "http_version": "1.1",
+  "body_sent": {
+    "bytes": "0"
+  },
+  "url": "/analyzeVideo"
+}
+
+DELETE my_product_index
+PUT my_product_index
+{
+  "mappings": {
+    "doc": {
+      "dynamic_templates": [
+        {
+          "strings": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "body_sent": {
+          "properties": {
+            "bytes": {
+              "type": "long"
+            }
+          }
+        },
+        "url": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+
+GET my_product_index/_mapping
+
+
+
+
+
+
+
+
+# dynamic template
+DELETE test_index
+PUT test_index
+{
+  "mappings": {
+    "doc": {
+      "dynamic_templates": [
+        {
+          "strings": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+PUT test_index/doc/1
+{
+  "name":"alfred"
+}
+
+GET test_index/_mapping
+
+DELETE test_index
+
+PUT test_index
+{
+  "mappings": {
+    "doc": {
+      "dynamic_templates": [
+        {
+          "message_as_text": {
+            "match_mapping_type": "string",
+            "match":   "message*",
+            "mapping": {
+              "type": "text"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+PUT test_index/doc/1
+{
+  "name":"alfred",
+  "message_info":"I'm a good boy"
+}
+
+GET test_index/_mapping
+
+
+
+# null value
+DELETE my_index
+
+PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "properties": {
+        "status_code": {
+          "type":       "keyword",
+          "null_value": "NULL"
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{
+  "status_code": null
+}
+
+PUT my_index/my_type/2
+{
+  "status_code": []
+}
+
+GET my_index/_search
+{
+  "query": {
+    "term": {
+      "status_code": "NULL"
+    }
+  }
+}
+
+GET my_index/my_type/1
+
+
+# index
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "cookie": {
+          "type": "text",
+          "index": false
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/doc/1
+{
+  "cookie":"name=alfred"
+}
+
+GET my_index/_search
+{
+  "query":{
+    "match": {
+      "cookie": "name"
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+# copy_to
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "first_name": {
+          "type": "text",
+          "copy_to": "full_name"
+        },
+        "last_name": {
+          "type": "text",
+          "copy_to": "full_name"
+        },
+        "full_name": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/doc/1
+{
+  "first_name": "John",
+  "last_name": "Smith"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "full_name": {
+        "query": "John Smith",
+        "operator": "and"
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Mapping
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "title": {
+          "type": "text"
+        },
+        "name": {
+          "type": "keyword"
+        },
+        "age": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+
+
+GET my_index/_mapping
+
+
+# dynamic
+DELETE my_index
+
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "dynamic": false,
+      "properties": {
+        "name": {
+          "type": "text"
+        },
+        "profile": {
+          "dynamic": true,
+          "properties": {}
+        },
+        "works": {
+          "dynamic": "strict",
+          "properties": {
+            "name": {
+              "type": "text"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+GET my_index/_mapping
+
+PUT my_index/doc/1
+{
+  "name":"alfred",
+  "age":10
+}
+
+GET my_index/doc/1
+
+GET my_index/_search
+
+GET my_index/_search
+{
+  "query":{
+    "match": {
+      "name": "alfred"
+    }
+  }
+}
+
+GET my_index/_search
+{
+  "query":{
+    "match": {
+      "age": 10
+    }
+  }
+}
+
+PUT my_index/doc/1
+{
+  "name":"alfred",
+  "age":10,
+  "profile":{
+    "date":"2000-10-01",
+    "location":"shanghai"
+  }
+}
+
+GET my_index/doc/1
+
+GET my_index/_search
+
+GET my_index/_search
+{
+  "query":{
+    "match": {
+      "profile.date": "2000-10-01"
+    }
+  }
+}
+
+GET my_index/_search
+{
+  "query":{
+    "match": {
+      "profile.location": "shanghai"
+    }
+  }
+}
+
+PUT my_index/doc/1
+{
+  "name":"alfred",
+  "age":10,
+  "profile":{
+    "date":"2000-10-01",
+    "location":"shanghai"
+  },
+  "works":{
+    "name":"my lady"
+  }
+}
+
+
+PUT my_index/doc/1
+{
+  "name":"alfred",
+  "age":10,
+  "profile":{
+    "date":"2000-10-01",
+    "location":"shanghai"
+  },
+  "works":{
+    "name":"my lady",
+    "date":"1999"
+  }
+}
+
+DELETE  test_keyword
+
+PUT test_keyword
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "name": {
+          "type": "text",
+          "norms": false
+        }
+      }
+    }
+  }
+}
+
+POST test_keyword/doc/_bulk
+{"index":{"_id":"1"}}
+{"name":"test"}
+{"index":{"_id":"2"}}
+{"name":"test test a book test"}
+{"index":{"_id":"3"}}
+{"name":"test test a book"}
+{"index":{"_id":"4"}}
+{"name":"test test a book adsljlksajdlkfjaslkdjflsjfsdkf test kjsldfjlksd"}
+{"index":{"_id":"5"}}
+{"name":"test test test test"}
+{"index":{"_id":"6"}}
+{"name":"test is a book"}
+
+GET test_keyword/_search
+{
+  "query":{
+    "match": {
+      "name": "test"
+    }
+  }
+}
+
+PUT test_keyword2
+{
+  "settings": {
+    "index":{
+      "number_of_shards":1
+    }
+  },
+  "mappings": {
+    "doc": {
+      "properties": {
+        "name": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+
+
+POST test_keyword2/doc/_bulk
+{"index":{"_id":"1"}}
+{"name":"test"}
+{"index":{"_id":"2"}}
+{"name":"test test a book test"}
+{"index":{"_id":"3"}}
+{"name":"test test a book"}
+
+GET test_keyword2/_search
+{
+  "query":{
+    "match": {
+      "name": "test"
+    }
+  }
+}
+
+
+#dynamic template
+DELETE test_index
+PUT test_index
+{
+  "mappings": {
+    "doc": {
+      "dynamic_templates": [
+        {
+          "message_as_text": {
+            "match_mapping_type": "string",
+            "match": "message*",
+            "mapping": {
+              "type": "text"
+            }
+          }
+        },
+        {
+          "strings_as_keywords": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        }
+
+      ]
+    }
+  }
+}
+
+PUT test_index/doc/1
+{
+  "name":"alfred",
+  "message":"handsome boy"
+}
+
+GET test_index/_mapping
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# dynamic mapping
+DELETE test_index
+PUT /test_index/doc/1
+{
+  "username":"alfred",
+  "age":1.2
+}
+
+GET /test_index/_mapping
+
+# dynamic mapping
+DELETE test_index
+PUT /test_index/doc/1
+{
+  "username":"alfred",
+  "age":14,
+  "birth":"1988-10-10",
+  "married":false,
+  "year":"18",
+  "tags":["boy","fashion"],
+  "money":100.1
+}
+
+GET /test_index/_mapping
+
+# date
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "dynamic_date_formats": ["MM/dd/yyyy"]
+    }
+  }
+}
+
+PUT my_index/my_type/1
+{
+  "create_date": "09/25/2015"
+}
+PUT my_index/my_type/1
+{
+  "create_date": "2015-09-01"
+}
+
+GET my_index/_mapping
+
+
+
+# numeric detection
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "my_type": {
+      "numeric_detection": true
+    }
+  }
+}
+PUT my_index/my_type/1
+{
+  "my_float":   "1.0",
+  "my_integer": "1"
+}
+
+GET my_index/_mapping
+
+
+
+
+
+
+
+
+# copy_to
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "doc": {
+      "properties": {
+        "first_name": {
+          "type": "text",
+          "copy_to": "full_name"
+        },
+        "last_name": {
+          "type": "text",
+          "copy_to": "full_name"
+        },
+        "full_name": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+
+PUT my_index/doc/1
+{
+  "first_name": "John",
+  "last_name": "Smith"
+}
+
+GET my_index/_search
+{
+  "query": {
+    "match": {
+      "full_name": {
+        "query": "John Smith",
+        "operator": "and"
+      }
+    }
+  }
+}
