@@ -1,0 +1,35 @@
+input {
+    file {
+        type => "doc"
+        path => "/data/logs/elk/dc/ab_*.log"
+        codec => json {
+            charset => "UTF-8"
+        }
+        start_position => beginning
+        tags => ["naughty_cheetah_studio_arrow_brawl"]
+    }
+}
+
+# {"behaviorTime":1533888645000,"tableName":"ab-behavior-log-2018-08","userId":1}
+# {"behaviorTime":1533888646001,"tableName":"ab-behavior-log-2018-08","userId":1}
+filter {
+#  grok {
+#    match => {
+#      "message" => '%{IPORHOST:remote_ip} - %{DATA:user_name} \[%{HTTPDATE:time}\] "%{WORD:request_action} %{DATA:request} HTTP/%{NUMBER:http_version}" %{NUMBER:response} %{NUMBER:bytes} "%{DATA:referrer}" "%{DATA:agent}"'
+#    }
+#  }
+
+  json {
+    add_field => {
+      "behaviorTime" =>
+    }
+  }
+}
+
+output {
+    #stdout { codec => "json" }
+    elasticsearch {
+        hosts => ["10.60.81.146:9200"]
+        index => "arrow_brawl"
+    }
+}

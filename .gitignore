@@ -54,3 +54,4 @@ hs_err_pid*
 
 # 忽略一些内部使用的文件
 src/elk/arrow/*
+src/elk/ab/*
