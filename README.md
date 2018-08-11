@@ -222,3 +222,57 @@ output {
     }
 }
 ```
+
+### Logstash调试的配置建议
+- http做input，方便输入测试数据，并且可以结合reload特性(stdin无法reload)
+- stdout做output，codec使用rubydebug，即时查看解析结果
+- 测试错误输入情况下的输出，以便对错误情况进行处理
+- 配置如下：
+```
+input {
+    http {
+        port => 7474
+    }
+}
+filter {
+}
+output {
+    stdout {
+        codec => rubydebug
+    }
+}
+```
+- @metadata特殊字段，其内容不会输出在output中
+- 适合用来存储做条件判断，临时存储的字段，相比remove_field有一定的性能提升
+- 配置如下：
+```
+input {
+    stdin {}
+}
+filter {
+    mutate {
+        add_field => {
+            "[@metadata][debug]" => true #作为调试开关
+        }
+    }
+    mutate {
+        add_field => {
+            "show" => "This data will be in the output"
+        }
+    }
+    mutate {
+        remove_field => "headers"
+    }
+}
+output {
+    if [@metadata][debug] {
+        stdout {
+            codec => rubydebug
+        }
+    }else {
+        stdout {
+            codec => json
+        }
+    }
+}
+```
