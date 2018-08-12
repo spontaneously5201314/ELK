@@ -276,3 +276,29 @@ output {
     }
 }
 ```
+
+### Logstash监控运维API
+```
+http://localhost:9600
+http://localhost:9600/_node
+http://localhost:9600/_node/stats
+http://localhost:9600/_node/hot_threads
+```
+
+### Logstash 结合X-Pack
+```
+安装X-Pack
+bin/logstash install x-pack
+在logstash.yml配置文件后面追加：
+xpack.monitoring.elasticsearch.url:["http://localhost:9200"]
+地址：https://www.elastic.co/guide/en/logstash/current/installing-xpack-log.html
+```
+
+### Filebeat
+```
+- 读取日志文件，但不做数据的解析处理
+- 保证数据“At Least Once”至少被读取一次，即数据不会丢
+- 处理多行数据
+- 解析json格式数据
+- 简单的过滤功能
+```
