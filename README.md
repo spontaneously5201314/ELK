@@ -297,8 +297,40 @@ xpack.monitoring.elasticsearch.url:["http://localhost:9200"]
 ### Filebeat
 ```
 - 读取日志文件，但不做数据的解析处理
-- 保证数据“At Least Once”至少被读取一次，即数据不会丢
-- 处理多行数据
-- 解析json格式数据
+- 保证数据“At Least Once”至少被读取一次，即数据不会丢，但是可能出现重复消费
+- 处理多行数据，用于处理堆栈数据
+- 解析JSON格式数据
 - 简单的过滤功能
+- 使用命令行启动的时候，可以在最后面加上-d "pushlish"，加入DEBUG
+```
+
+### Filebeat运行命令
+```
+./filebeat -e -c filebeat.yml -d "publish"
+其中-e表示输出到stderr，默认输出到syslog和logs/filebeat文件
+-d表示输出publish相关的debug日志
+```
+
+### Packetbeat抓包
+> 1.常用工具
+```
+- tcpdump
+- wireshark
+```
+> 2.packetbeat抓包的两种配置
+```
+- pcap 基于libpcap实现，跨平台支持，缺点是网络流量很大的时候，会出现丢包
+- af_packet仅支持linux系统，基于内存映射到的嗅探技术，性能更好
+```
+> 3.使用af_packet抓包时，packetbeat的配置
+```
+packetbeat.interfaces.device:eth0
+packetbeat.interfaces.type:af_packet
+packetbeat.interfaces.buffer_size_mb: 100
+```
+ 
+### Kibana真实线上部署的推荐架构
+```
+因为线上真实部署的情况下，ES都是多节点的，为了让kibana均衡的访问每个节点，可以专门部署
+一个Coordination Only ES Node，和kibana在同一台机器上
 ```
