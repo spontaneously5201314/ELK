@@ -62,4 +62,10 @@ bin/elasticsearch -Ecluster.name=test -Enode.name=node2 -Epath.data=test_node2 -
 ```
 
 ### ES中文档的创建和读取流程
-![单个文档创建流程](C:\Users\cm\Desktop\文档创建流程.png)
+![单个文档创建流程](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/01_create_document.png)
+![单个文档读取流程](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/02_read_document.png)
+![文档批量创建流程](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/03_bulk_create_document.png)
+![文档批量读取流程](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/04_bulk_read_document.png)
+![脑裂问题](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/05_split_brain.png)
+![脑裂问题的解决方案](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/06_solution_of_split_brain.png)
+![倒排索引的不可变更](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/07_Invariability%20of%20inverted%20index.png)
