@@ -69,3 +69,5 @@ bin/elasticsearch -Ecluster.name=test -Enode.name=node2 -Epath.data=test_node2 -
 ![脑裂问题](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/05_split_brain.png)
 ![脑裂问题的解决方案](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/06_solution_of_split_brain.png)
 ![倒排索引的不可变更](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/cluster/07_Invariability%20of%20inverted%20index.png)
+
+
