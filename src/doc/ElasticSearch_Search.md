@@ -3,4 +3,4 @@
 - Query阶段
 ![Query阶段]()
 - Fetch阶段
-![Fetch阶段]()
+![Fetch阶段](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/search/01_fetch_stage.png)
