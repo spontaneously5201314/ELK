@@ -394,3 +394,266 @@ GET test_search_index/_search
   }
 }
 ```
+
+### Pipeline聚合分析
+> 针对聚合分析的结果再次进行聚合分析，而且支持链式调拥    
+> 所有的Pipeline都有buckets_path关键词      
+> Pipeline的分析结果会输出到原结果中，分局输出位置的不同，分为两类  
+> 1.Parent：结果内嵌到现有的聚合分析结果中
+```
+- Derivative
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "birth": {
+      "date_histogram": {
+        "field": "birth",
+        "interval": "year",
+        "min_doc_count": 0
+      },
+      "aggs": {
+        "avg_salary": {
+          "avg": {
+            "field": "salary"
+          }
+        },
+        "derivative_avg_salary": {
+          "derivative": {
+            "buckets_path": "avg_salary"
+          }
+        }
+      }
+    }
+  }
+}
+- Moving Average
+- Cumulative Sum
+```
+> 2.Sibling：结果与现有聚合分析结果同级
+```
+- Max Bucket/Min Bucket/Avg Bucket/Sum Bucket
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "jobs": {
+      "terms": {
+        "field": "job.keyword",
+        "size": 10
+      },
+      "aggs": {
+        "avg_salary": {
+          "avg": {
+            "field": "salary"
+          }
+        }
+      }
+    },
+    "min_salary_by_job": {
+      "min_bucket": {
+        "buckets_path": "jobs>avg_salary"
+      }
+    }
+  }
+}
+- Stats/Extended Stats Bucket
+- Percentiles Bucket
+```
+
+### 聚合分析的作用范围
+> ES聚合分析默认的作用范围是query的结果集，可以通过如下的方式改变其作用范围
+- filter：为某个聚合分析设定过滤条件，从而在不更改整体query语句的情况下修改作用范围
+```
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "jobs_salary_small": {
+      "filter": {
+        "range": {
+          "salary": {
+            "gte": 0,
+            "lte": 10000
+          }
+        }
+      },
+      "aggs": {
+        "jobs": {
+          "terms": {
+            "field": "job.keyword",
+            "size": 10
+          }
+        }
+      }
+    },
+    "jobs": {
+      "terms": {
+        "field": "job.keyword",
+        "size": 10
+      }
+    }
+  }
+}
+```
+- post_filter：作用于文档过滤，但在聚合分析后生效
+```
+GET test_search_index/_search
+{
+  "aggs": {
+    "jobs": {
+      "terms": {
+        "field": "job.keyword",
+        "size": 10
+      }
+    }
+  },
+  "post_filter": {
+    "match": {
+      "job.keyword": "java engineer"
+    }
+  }
+}
+```
+- global：无视query过滤条件，基于全部文档进行分析 
+```
+GET test_search_index/_search
+{
+  "query": {
+    "match": {
+      "job.keyword": "java engineer"
+    }
+  },
+  "aggs": {
+    "java_arg_salary": {
+      "avg": {
+        "field": "salary"
+      }
+    },
+    "all": {
+      "global": {},
+      "aggs": {
+        "avg_salary": {
+          "avg": {
+            "field": "salary"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### 排序
+> 可以使用自带的关键数据进行排序，比如：
+- _count文档数
+- _key按照key值排序
+```
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "jobs": {
+      "terms": {
+        "field": "job.keyword",
+        "size": 10,
+        "order": [
+          {
+            "_count": "asc"
+          },
+          {
+            "_key": "desc"
+          }
+        ]
+      }
+    }
+  }
+}
+--------------------------------------------------
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "salary_hist": {
+      "histogram": {
+        "field": "salary",
+        "interval": 5000,
+        "order": {
+          "age>avg_age": "desc"
+        }
+      },
+      "aggs": {
+        "age": {
+          "filter": {
+            "range": {
+              "age": {
+                "gte": 10
+              }
+            }
+          },
+          "aggs": {
+            "avg_age": {
+              "avg": {
+                "field": "age"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Terms桶查询中的精准度问题
+> 出现问题的原因是因为数据是分散在多个Shard上，Coordinating Node无法得悉数据的全貌
+![term精准度问题](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/aggregation/01_terms_problem.png)
+
+### 精准度问题的解决方案
+> 设置Shard数为1，从根本上消除数据分散的问题，但无法承载大数据量
+> 合理设置_search中Shard_Size的大小，即每次从Shard上额外多获取数据，以提升精度
+```
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "jobs": {
+      "terms": {
+        "field": "job.keyword",
+        "size": 1,
+        "shard_size": 10
+      }
+    }
+  }
+}
+```
+> 如何确定Shard_Size的大小？
+```
+terms聚合返回结果中有如下两个统计值：
+- doc_count_error_upper_bound：被遗漏的term可能的最大值
+- sum_other_doc_count：返回结果bucket的term外其他term的文档总数
+设定show_term_doc_count_error可以查看每个bucket误算的最大值
+----------------------------------------------------------------
+GET test_search_index/_search
+{
+  "size": 0,
+  "aggs": {
+    "jobs": {
+      "terms": {
+        "field": "job.keyword",
+        "size": 2,
+        "show_term_doc_count_error": true
+      }
+    }
+  }
+}
+----------------------------------------------------------------
+Shard_Size默认大小是：shard_size=(size*1.5)+10
+通过调整Shard_Size的大小降低doc_count_error_upper_bound来提升准确度，增大了整体的计算量，从而降低了响应时间
+```
+
+### 近似统计算法需要权衡的三个问题
+> 在ES的聚合分析中，Cardinality和Percentile分析使用的是近似统计计算
+- 结果是近似准确的，但不一定精准
+- 可以通过参数的调整使其结果精准，但同时也以为着更多的计算时间和更大的性能消耗
+![近似统计算法](https://github.com/spontaneously5201314/ELK/blob/master/src/doc/img/aggregation/02_approximate_statistical_algorithm.png)
